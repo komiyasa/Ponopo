@@ -100,16 +100,10 @@ function extractAttachments(issueBody) {
 
 async function main() {
   // Validate environment
-  // GH_PAT: GitHub Models API 用（PAT）
-  // GITHUB_TOKEN: Issue コメント用（Actions 自動提供）
-  const ghPat = process.env.GH_PAT;
   const githubToken = process.env.GITHUB_TOKEN;
   const issueNumber = parseInt(process.env.ISSUE_NUMBER, 10);
   const repoFullName = process.env.GITHUB_REPOSITORY; // "owner/repo"
 
-  if (!ghPat) {
-    throw new Error("GH_PAT is required (GitHub PAT for Models API)");
-  }
   if (!githubToken) {
     throw new Error("GITHUB_TOKEN is required");
   }
@@ -119,7 +113,7 @@ async function main() {
 
   const [owner, repo] = repoFullName.split("/");
   const anthropic = new Anthropic({
-    apiKey: ghPat,
+    apiKey: githubToken,
     baseURL: GITHUB_MODELS_BASE_URL,
   });
   const octokit = new Octokit({ auth: githubToken });

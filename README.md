@@ -29,34 +29,13 @@ GitHub Issue に不動産情報を投稿するだけで、**逆転裁判**のキ
 
 **両方クリアしなければ「有罪（不合格）」**
 
-## 🚀 セットアップ（初回のみ）
+## 🚀 セットアップ
 
-### Step 1. GitHub PAT の作成
+**特別な設定は不要です。** このリポジトリを fork または clone してすぐ使えます。
 
-GitHub Models API を使うために **Personal Access Token (PAT)** が必要です。
-
-1. [GitHub Settings → Developer settings → Personal access tokens → Fine-grained tokens](https://github.com/settings/tokens?type=beta) を開く
-2. **「Generate new token」** をクリック
-3. 設定：
-   - Token name: `Ponopo Models`
-   - Expiration: 任意（90日推奨）
-   - Repository access: `Only select repositories` → **Ponopo** を選択
-   - Permissions: デフォルトのまま（特別な権限は不要）
-4. **「Generate token」** → トークンをコピー
-
-### Step 2. リポジトリに Secret を登録
-
-1. [Ponopo リポジトリの Settings](https://github.com/komiyasa/Ponopo/settings) を開く
-2. 左メニュー → **Secrets and variables** → **Actions**
-3. **「New repository secret」** をクリック
-4. 以下を設定：
-
-| Name | Value |
-|------|-------|
-| `GH_PAT` | Step 1 でコピーした PAT |
-
-> **`GITHUB_TOKEN` は設定不要**です。GitHub Actions が自動で提供します。
-> Copilot へのアサインも不要です。
+- `GITHUB_TOKEN` は GitHub Actions が自動提供（設定不要）
+- GitHub Models API には `models: read` 権限でアクセス（ワークフローに設定済み）
+- **PAT も API キーも Copilot アサインも不要**
 
 ---
 

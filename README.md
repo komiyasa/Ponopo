@@ -31,12 +31,9 @@ GitHub Issue に不動産情報を投稿するだけで、**逆転裁判**のキ
 
 ## 🚀 セットアップ（初回1回だけ）
 
-GitHub Models API にアクセスするために PAT が必要です。スコープなし（デフォルト）の PAT で OK です。
+**設定不要です。** `GITHUB_TOKEN` に `models: read` 権限を付与済みなので、PAT や API キーの登録は一切不要です。
 
-**1.** [github.com/settings/tokens](https://github.com/settings/tokens) → **Generate new token (classic)** → スコープは何も選ばずに生成 → コピー  
-**2.** [Ponopo の Settings → Secrets → Actions](https://github.com/komiyasa/Ponopo/settings/secrets/actions) → **New repository secret** → Name: `GH_PAT`、Value: コピーしたトークン
-
-> `GITHUB_TOKEN` は Actions が自動提供するので設定不要です。Copilot へのアサインも不要です。
+> Copilot へのアサインも不要です。
 
 ---
 

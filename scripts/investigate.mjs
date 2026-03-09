@@ -114,14 +114,10 @@ function extractAttachments(issueBody) {
 
 async function main() {
   // Validate environment
-  const ghPat = process.env.GH_PAT;
   const githubToken = process.env.GITHUB_TOKEN;
   const issueNumber = parseInt(process.env.ISSUE_NUMBER, 10);
   const repoFullName = process.env.GITHUB_REPOSITORY; // "owner/repo"
 
-  if (!ghPat) {
-    throw new Error("GH_PAT is required (GitHub PAT for Models API)");
-  }
   if (!githubToken) {
     throw new Error("GITHUB_TOKEN is required");
   }
@@ -168,7 +164,7 @@ async function main() {
     const systemPrompt = loadPrompt(agent.promptFile);
 
     try {
-      const result = await callAgent(ghPat, systemPrompt, userMessage);
+      const result = await callAgent(githubToken, systemPrompt, userMessage);
       agentResults.push({ agent, result });
 
       // Post individual agent comment
@@ -214,7 +210,7 @@ async function main() {
 
   try {
     const finalResult = await callAgent(
-      ghPat,
+      githubToken,
       orchestratorPrompt,
       orchestratorInput
     );

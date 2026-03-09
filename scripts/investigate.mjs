@@ -8,6 +8,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROMPTS_DIR = join(__dirname, "..", "prompts");
 
 // --- Configuration ---
+const GITHUB_MODELS_BASE_URL = "https://models.inference.ai.azure.com";
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-opus-4-20250514";
 const MAX_TOKENS = 4096;
 
@@ -99,14 +100,10 @@ function extractAttachments(issueBody) {
 
 async function main() {
   // Validate environment
-  const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
   const githubToken = process.env.GITHUB_TOKEN;
   const issueNumber = parseInt(process.env.ISSUE_NUMBER, 10);
   const repoFullName = process.env.GITHUB_REPOSITORY; // "owner/repo"
 
-  if (!anthropicApiKey) {
-    throw new Error("ANTHROPIC_API_KEY is required");
-  }
   if (!githubToken) {
     throw new Error("GITHUB_TOKEN is required");
   }
@@ -115,7 +112,10 @@ async function main() {
   }
 
   const [owner, repo] = repoFullName.split("/");
-  const anthropic = new Anthropic({ apiKey: anthropicApiKey });
+  const anthropic = new Anthropic({
+    apiKey: githubToken,
+    baseURL: GITHUB_MODELS_BASE_URL,
+  });
   const octokit = new Octokit({ auth: githubToken });
 
   // Fetch the issue

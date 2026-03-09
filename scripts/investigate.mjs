@@ -8,7 +8,7 @@ const PROMPTS_DIR = join(__dirname, "..", "prompts");
 
 // --- Configuration ---
 const GITHUB_MODELS_BASE_URL = "https://models.inference.ai.azure.com";
-const MODEL = process.env.ANTHROPIC_MODEL || "claude-opus-4-20250514";
+const MODEL = process.env.AI_MODEL || "gpt-4o";
 const MAX_TOKENS = 4096;
 
 const AGENTS = [
@@ -68,18 +68,19 @@ function buildUserMessage(issueBody, attachments) {
 }
 
 async function callAgent(token, systemPrompt, userMessage) {
-  const response = await fetch(`${GITHUB_MODELS_BASE_URL}/v1/messages`, {
+  const response = await fetch(`${GITHUB_MODELS_BASE_URL}/chat/completions`, {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${token}`,
       "Content-Type": "application/json",
-      "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
       model: MODEL,
       max_tokens: MAX_TOKENS,
-      messages: [{ role: "user", content: userMessage }],
-      system: systemPrompt,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userMessage },
+      ],
     }),
   });
 
@@ -89,10 +90,7 @@ async function callAgent(token, systemPrompt, userMessage) {
   }
 
   const data = await response.json();
-  return data.content
-    .filter((block) => block.type === "text")
-    .map((block) => block.text)
-    .join("\n");
+  return data.choices[0].message.content;
 }
 
 async function postComment(octokit, owner, repo, issueNumber, body) {
@@ -114,16 +112,10 @@ function extractAttachments(issueBody) {
 
 async function main() {
   // Validate environment
-  // GH_PAT: GitHub Models API用（Fine-grained PAT、Models Read権限）
-  // GITHUB_TOKEN: Issueコメント用（Actions自動提供）
-  const ghPat = process.env.GH_PAT;
   const githubToken = process.env.GITHUB_TOKEN;
   const issueNumber = parseInt(process.env.ISSUE_NUMBER, 10);
   const repoFullName = process.env.GITHUB_REPOSITORY; // "owner/repo"
 
-  if (!ghPat) {
-    throw new Error("GH_PAT is required (Fine-grained PAT with Models read permission)");
-  }
   if (!githubToken) {
     throw new Error("GITHUB_TOKEN is required");
   }
@@ -170,7 +162,7 @@ async function main() {
     const systemPrompt = loadPrompt(agent.promptFile);
 
     try {
-      const result = await callAgent(ghPat, systemPrompt, userMessage);
+      const result = await callAgent(githubToken, systemPrompt, userMessage);
       agentResults.push({ agent, result });
 
       // Post individual agent comment
@@ -216,7 +208,7 @@ async function main() {
 
   try {
     const finalResult = await callAgent(
-      ghPat,
+      githubToken,
       orchestratorPrompt,
       orchestratorInput
     );

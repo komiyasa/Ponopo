@@ -15,6 +15,7 @@ jobs:
     permissions:
       issues: write
       contents: read
+      models: read
 
     steps:
       - name: Checkout repository
@@ -30,9 +31,7 @@ jobs:
 
       - name: Run investigation
         env:
-          GH_PAT: ${{ secrets.GH_PAT }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          ANTHROPIC_MODEL: "claude-opus-4-20250514"
         run: node scripts/investigate.mjs

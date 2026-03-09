@@ -31,26 +31,9 @@ GitHub Issue に不動産情報を投稿するだけで、**逆転裁判**のキ
 
 ## 🚀 セットアップ（初回1回だけ）
 
-**初回のみ、Fine-grained PAT の作成が必要です（約2分）。**
+**設定不要です。** PAT も API キーも Copilot アサインも一切不要です。
 
-#### Step 1: Fine-grained PAT を作成
-
-1. https://github.com/settings/personal-access-tokens/new を開く
-2. 以下を設定：
-   - **Token name**: `Ponopo`
-   - **Expiration**: 任意
-   - **Repository access**: `Only select repositories` → **Ponopo** を選択
-   - **Account permissions** → **Models** → **Read** ← ❗これが重要
-3. **Generate token** → コピー
-
-#### Step 2: Secret に登録
-
-1. https://github.com/komiyasa/Ponopo/settings/secrets/actions を開く
-2. **New repository secret**
-   - Name: `GH_PAT`
-   - Value: Step 1 でコピーしたトークン
-
-> `GITHUB_TOKEN` は Actions が自動提供。Copilot アサインも不要。
+GitHub Actions の `GITHUB_TOKEN` + `models: read` 権限で GitHub Models（GPT-4o）を呼び出します。
 
 ---
 
@@ -160,16 +143,16 @@ GitHub Actions 起動
 
 ## ⚙️ 技術スタック
 
-- **AI Model**: Claude Opus 4（GitHub Models 経由）
+- **AI Model**: GPT-4o（GitHub Models 経由）
 - **CI/CD**: GitHub Actions
 - **Runtime**: Node.js 20
-- **API**: GitHub Models API + GitHub REST API
+- **API**: GitHub Models (OpenAI互換) + GitHub REST API
 
 ## ⚠️ 注意事項
 
 - この調査は AI による自動分析です。投資判断は必ずご自身の責任で行ってください
 - 提供された情報が少ない場合、エージェントは一般的な市場データに基づいて推定します
-- GitHub Copilot（GitHub Models）経由で Claude を利用します
+- GitHub Copilot（GitHub Models）経由で GPT-4o を利用します（設定不要）
 - 各エージェントは「厳しめ」に設定されています。甘い評価は出ません
 
 ## 📜 ライセンス

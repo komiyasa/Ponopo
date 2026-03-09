@@ -1,0 +1,13 @@
+{
+  "name": "ponopo",
+  "version": "1.0.0",
+  "description": "不動産調査オーケストレーションシステム - 逆転裁判キャラクターによる多角的分析",
+  "type": "module",
+  "scripts": {
+    "investigate": "node scripts/investigate.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@octokit/rest": "^21.0.0"
+  }
+}

@@ -1,4 +1,3 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { Octokit } from "@octokit/rest";
 import { readFileSync } from "fs";
 import { join, dirname } from "path";
@@ -68,14 +67,29 @@ function buildUserMessage(issueBody, attachments) {
   return msg;
 }
 
-async function callAgent(anthropic, systemPrompt, userMessage) {
-  const response = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: MAX_TOKENS,
-    messages: [{ role: "user", content: userMessage }],
-    system: systemPrompt,
+async function callAgent(token, systemPrompt, userMessage) {
+  const response = await fetch(`${GITHUB_MODELS_BASE_URL}/v1/messages`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json",
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: MAX_TOKENS,
+      messages: [{ role: "user", content: userMessage }],
+      system: systemPrompt,
+    }),
   });
-  return response.content
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`API error ${response.status}: ${errorText}`);
+  }
+
+  const data = await response.json();
+  return data.content
     .filter((block) => block.type === "text")
     .map((block) => block.text)
     .join("\n");
@@ -116,10 +130,6 @@ async function main() {
   }
 
   const [owner, repo] = repoFullName.split("/");
-  const anthropic = new Anthropic({
-    apiKey: ghPat,
-    baseURL: GITHUB_MODELS_BASE_URL,
-  });
   const octokit = new Octokit({ auth: githubToken });
 
   // Fetch the issue
@@ -158,7 +168,7 @@ async function main() {
     const systemPrompt = loadPrompt(agent.promptFile);
 
     try {
-      const result = await callAgent(anthropic, systemPrompt, userMessage);
+      const result = await callAgent(ghPat, systemPrompt, userMessage);
       agentResults.push({ agent, result });
 
       // Post individual agent comment
@@ -204,7 +214,7 @@ async function main() {
 
   try {
     const finalResult = await callAgent(
-      anthropic,
+      ghPat,
       orchestratorPrompt,
       orchestratorInput
     );

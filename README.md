@@ -29,28 +29,52 @@ GitHub Issue に不動産情報を投稿するだけで、**逆転裁判**のキ
 
 **両方クリアしなければ「有罪（不合格）」**
 
-## 🚀 使い方
+## 🚀 セットアップ（初回のみ）
 
-### 1. リポジトリのセットアップ
+### Step 1. GitHub PAT の作成
 
-```bash
-# このリポジトリを GitHub に "Ponopo" として作成
-gh repo create Ponopo --public --source=. --push
-```
+GitHub Models API を使うために **Personal Access Token (PAT)** が必要です。
 
-### 2. 依存関係のインストール（ロックファイル生成）
+1. [GitHub Settings → Developer settings → Personal access tokens → Fine-grained tokens](https://github.com/settings/tokens?type=beta) を開く
+2. **「Generate new token」** をクリック
+3. 設定：
+   - Token name: `Ponopo Models`
+   - Expiration: 任意（90日推奨）
+   - Repository access: `Only select repositories` → **Ponopo** を選択
+   - Permissions: デフォルトのまま（特別な権限は不要）
+4. **「Generate token」** → トークンをコピー
 
-```bash
-npm install
-```
+### Step 2. リポジトリに Secret を登録
 
-> `package-lock.json` をコミットしてください。workflow で `npm ci` を使用するために必要です。
+1. [Ponopo リポジトリの Settings](https://github.com/komiyasa/Ponopo/settings) を開く
+2. 左メニュー → **Secrets and variables** → **Actions**
+3. **「New repository secret」** をクリック
+4. 以下を設定：
 
-### 3. Issue を作成して調査開始
+| Name | Value |
+|------|-------|
+| `GH_PAT` | Step 1 でコピーした PAT |
 
-Issue を作成すると自動的に調査が始まります。
+> **`GITHUB_TOKEN` は設定不要**です。GitHub Actions が自動で提供します。
+> Copilot へのアサインも不要です。
 
-**Issue の書き方例：**
+---
+
+## 📝 使い方
+
+### Issue を作るだけ！
+
+**やることはこれだけ：**
+1. [Ponopo の Issues](https://github.com/komiyasa/Ponopo/issues) を開く
+2. **「New issue」** をクリック
+3. 物件情報を書いて **「Submit new issue」**
+4. ☕ 待つだけ（数分で5人のエージェントが順次コメントし、最後に御剣怜侍が最終レポートを投稿）
+
+> **Copilot へのアサインは不要**です。GitHub Actions が自動で起動します。
+
+### Issue の書き方
+
+#### パターン A：物件情報を直接書く
 
 ```markdown
 ## 物件情報
@@ -65,24 +89,60 @@ Issue を作成すると自動的に調査が始まります。
 - 最寄り駅: ○○線 △△駅 徒歩8分
 - 土地面積: 200㎡
 - 建物面積: 480㎡
+- 月額家賃収入: 90万円
+- 管理費・修繕積立金: 月額8万円
 
 ## 参考リンク
 - https://example.com/property-listing
-
-## 補足
-マイソクは添付画像を参照
 ```
 
-または、リンクだけでもOK：
+#### パターン B：リンクだけ貼る
 
 ```markdown
 https://suumo.jp/xxxxx
-https://homes.co.jp/xxxxx
 ```
 
-### 4. 既存 Issue を再調査
+#### パターン C：マイソク（物件資料）を添付
 
-Issue に `investigate` ラベルを付けると再調査が実行されます。
+Issue 本文にドラッグ＆ドロップで画像を貼り付けてください。
+
+```markdown
+## 物件資料
+![マイソク](添付画像URL)
+
+## 補足
+- 価格: 8000万円
+- 想定家賃: 月額50万円
+```
+
+> **情報が多いほど精度の高い分析になります。**
+> 最低限「価格」「家賃」「所在地」があると、狩魔豪の数字判定が正確になります。
+
+### 既存 Issue を再調査したい場合
+
+Issue に **`investigate`** ラベルを付けると再調査が実行されます。
+
+### 調査の流れ
+
+```
+Issue 作成
+  ↓
+GitHub Actions 起動
+  ↓
+御剣怜侍「調査チーム招集」（開始コメント）
+  ↓
+🏢 成歩堂龍一 → 資産価値レポート（コメント）
+  ↓
+💰 狩魔冥 → 収益性レポート（コメント）
+  ↓
+👥 綾里真宵 → エリア・住民分析（コメント）
+  ↓
+☕ ゴドー → 融資開拓レポート（コメント）
+  ↓
+⚖️ 狩魔豪 → 最終数字判定（コメント）
+  ↓
+⚡ 御剣怜侍 → 総合レポート（最終コメント）
+```
 
 ## 🏗️ プロジェクト構造
 

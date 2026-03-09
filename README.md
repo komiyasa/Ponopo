@@ -31,9 +31,26 @@ GitHub Issue に不動産情報を投稿するだけで、**逆転裁判**のキ
 
 ## 🚀 セットアップ（初回1回だけ）
 
-**設定不要です。** `GITHUB_TOKEN` に `models: read` 権限を付与済みなので、PAT や API キーの登録は一切不要です。
+**初回のみ、Fine-grained PAT の作成が必要です（約2分）。**
 
-> Copilot へのアサインも不要です。
+#### Step 1: Fine-grained PAT を作成
+
+1. https://github.com/settings/personal-access-tokens/new を開く
+2. 以下を設定：
+   - **Token name**: `Ponopo`
+   - **Expiration**: 任意
+   - **Repository access**: `Only select repositories` → **Ponopo** を選択
+   - **Account permissions** → **Models** → **Read** ← ❗これが重要
+3. **Generate token** → コピー
+
+#### Step 2: Secret に登録
+
+1. https://github.com/komiyasa/Ponopo/settings/secrets/actions を開く
+2. **New repository secret**
+   - Name: `GH_PAT`
+   - Value: Step 1 でコピーしたトークン
+
+> `GITHUB_TOKEN` は Actions が自動提供。Copilot アサインも不要。
 
 ---
 

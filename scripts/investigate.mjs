@@ -114,10 +114,16 @@ function extractAttachments(issueBody) {
 
 async function main() {
   // Validate environment
+  // GH_PAT: GitHub Models API用（Fine-grained PAT、Models Read権限）
+  // GITHUB_TOKEN: Issueコメント用（Actions自動提供）
+  const ghPat = process.env.GH_PAT;
   const githubToken = process.env.GITHUB_TOKEN;
   const issueNumber = parseInt(process.env.ISSUE_NUMBER, 10);
   const repoFullName = process.env.GITHUB_REPOSITORY; // "owner/repo"
 
+  if (!ghPat) {
+    throw new Error("GH_PAT is required (Fine-grained PAT with Models read permission)");
+  }
   if (!githubToken) {
     throw new Error("GITHUB_TOKEN is required");
   }
@@ -164,7 +170,7 @@ async function main() {
     const systemPrompt = loadPrompt(agent.promptFile);
 
     try {
-      const result = await callAgent(githubToken, systemPrompt, userMessage);
+      const result = await callAgent(ghPat, systemPrompt, userMessage);
       agentResults.push({ agent, result });
 
       // Post individual agent comment
@@ -210,7 +216,7 @@ async function main() {
 
   try {
     const finalResult = await callAgent(
-      githubToken,
+      ghPat,
       orchestratorPrompt,
       orchestratorInput
     );

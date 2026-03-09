@@ -2,6 +2,7 @@ import { Octokit } from "@octokit/rest";
 import { readFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import * as cheerio from "cheerio";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROMPTS_DIR = join(__dirname, "..", "prompts");
@@ -55,13 +56,14 @@ function loadPrompt(filename) {
   return readFileSync(join(PROMPTS_DIR, filename), "utf-8");
 }
 
-function buildUserMessage(issueBody, attachments) {
+function buildUserMessage(issueBody, fetchedPages) {
   let msg = `以下の不動産情報を分析してください。厳しめに評価してください。\n\n`;
-  msg += `## 物件情報\n${issueBody}\n`;
-  if (attachments && attachments.length > 0) {
-    msg += `\n## 添付資料・リンク\n`;
-    for (const att of attachments) {
-      msg += `- ${att}\n`;
+  msg += `## 物件情報（Issue本文）\n${issueBody}\n`;
+  if (fetchedPages && fetchedPages.length > 0) {
+    msg += `\n## 物件ページから取得した詳細情報\n`;
+    for (const page of fetchedPages) {
+      msg += `\n### 取得元: ${page.url}\n`;
+      msg += `${page.content}\n`;
     }
   }
   return msg;
@@ -102,10 +104,111 @@ async function postComment(octokit, owner, repo, issueNumber, body) {
   });
 }
 
-function extractAttachments(issueBody) {
+function extractUrls(issueBody) {
   const urlRegex = /https?:\/\/[^\s)>\]]+/g;
   const matches = issueBody.match(urlRegex);
   return matches || [];
+}
+
+async function fetchPageContent(url) {
+  try {
+    console.log(`🌐 Fetching: ${url}`);
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; Ponopo/1.0; +https://github.com/komiyasa/Ponopo)",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "ja,en;q=0.5",
+      },
+      redirect: "follow",
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (!response.ok) {
+      console.warn(`⚠️ Failed to fetch ${url}: ${response.status}`);
+      return null;
+    }
+
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.includes("text/html") && !contentType.includes("application/xhtml")) {
+      console.warn(`⚠️ Skipping non-HTML content: ${contentType}`);
+      return null;
+    }
+
+    const html = await response.text();
+    const $ = cheerio.load(html);
+
+    // Remove non-content elements
+    $("script, style, nav, footer, header, iframe, noscript, svg, [role='navigation'], [role='banner'], .ad, .advertisement, .sidebar").remove();
+
+    // Try to get the page title
+    const title = $("title").text().trim();
+
+    // Extract text from the main content area
+    // Try common content selectors first, fall back to body
+    let textContent = "";
+    const contentSelectors = [
+      "main", "article", "#main", "#content", ".main",
+      ".property-detail", ".bukken", ".detail",
+      "[role='main']", ".content",
+    ];
+
+    for (const selector of contentSelectors) {
+      const el = $(selector);
+      if (el.length > 0) {
+        textContent = el.text();
+        break;
+      }
+    }
+
+    if (!textContent) {
+      textContent = $("body").text();
+    }
+
+    // Clean up whitespace: collapse multiple spaces/newlines
+    textContent = textContent
+      .replace(/[ \t]+/g, " ")
+      .replace(/(\n\s*){3,}/g, "\n\n")
+      .trim();
+
+    // Also extract table data (common in Japanese real estate sites)
+    const tables = [];
+    $("table").each((_, table) => {
+      const rows = [];
+      $(table).find("tr").each((_, tr) => {
+        const cells = [];
+        $(tr).find("th, td").each((_, cell) => {
+          cells.push($(cell).text().trim());
+        });
+        if (cells.length > 0) {
+          rows.push(cells.join(" | "));
+        }
+      });
+      if (rows.length > 0) {
+        tables.push(rows.join("\n"));
+      }
+    });
+
+    let result = "";
+    if (title) {
+      result += `タイトル: ${title}\n\n`;
+    }
+    if (tables.length > 0) {
+      result += `### テーブルデータ\n${tables.join("\n\n")}\n\n`;
+    }
+    result += `### ページ本文\n${textContent}`;
+
+    // Truncate to avoid exceeding token limits (roughly 12000 chars per page)
+    const MAX_CHARS = 12000;
+    if (result.length > MAX_CHARS) {
+      result = result.substring(0, MAX_CHARS) + "\n\n（…以降省略）";
+    }
+
+    console.log(`✅ Fetched ${url} (${result.length} chars)`);
+    return { url, content: result };
+  } catch (err) {
+    console.warn(`⚠️ Error fetching ${url}: ${err.message}`);
+    return null;
+  }
 }
 
 // --- Main ---
@@ -136,8 +239,15 @@ async function main() {
   console.log(`📋 Investigating issue #${issueNumber}: ${issue.title}`);
 
   const issueBody = issue.body || "(内容なし)";
-  const attachments = extractAttachments(issueBody);
-  const userMessage = buildUserMessage(issueBody, attachments);
+  const urls = extractUrls(issueBody);
+
+  // Fetch actual content from URLs
+  console.log(`🔗 Found ${urls.length} URL(s) in issue body. Fetching content...`);
+  const fetchResults = await Promise.all(urls.map((url) => fetchPageContent(url)));
+  const fetchedPages = fetchResults.filter((r) => r !== null);
+  console.log(`📄 Successfully fetched ${fetchedPages.length}/${urls.length} page(s).`);
+
+  const userMessage = buildUserMessage(issueBody, fetchedPages);
 
   // Post initial comment
   await postComment(

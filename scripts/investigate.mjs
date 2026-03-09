@@ -8,7 +8,7 @@ const PROMPTS_DIR = join(__dirname, "..", "prompts");
 
 // --- Configuration ---
 const GITHUB_MODELS_BASE_URL = "https://models.inference.ai.azure.com";
-const MODEL = process.env.AI_MODEL || "gpt-4o";
+const MODEL = process.env.AI_MODEL || "gpt-4.1";
 const MAX_TOKENS = 4096;
 
 const AGENTS = [
